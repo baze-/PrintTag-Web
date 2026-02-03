@@ -175,6 +175,8 @@ const app = {
             // Set format to openspool
             formatSelect.value = 'openspool';
             this.updateFormat();
+            // Generate new lot number for new tags
+            this.randomizeLotNr();
         }
     },
 
@@ -288,6 +290,7 @@ const app = {
 
         // Add listeners to all input fields to update record size
         const inputFields = ['minTemp', 'maxTemp', 'bedTempMin', 'bedTempMax',
+                            'spoolmanId', 'lotNr',
                             'materialName', 'gtin', 'materialAbbr', 'density',
                             'diameter', 'preheatTemp', 'mfgDate', 'nominalWeight',
                             'actualWeight', 'spoolWeight', 'countryCode'];
@@ -382,6 +385,8 @@ const app = {
         document.getElementById('maxTemp').value = data.maxTemp || '';
         document.getElementById('bedTempMin').value = data.bedTempMin || '';
         document.getElementById('bedTempMax').value = data.bedTempMax || '';
+        document.getElementById('spoolmanId').value = data.spoolmanId || '';
+        document.getElementById('lotNr').value = data.lotNr || '';
 
         // Advanced fields
         document.getElementById('materialName').value = data.materialName || '';
@@ -422,7 +427,9 @@ const app = {
             minTemp: document.getElementById('minTemp').value,
             maxTemp: document.getElementById('maxTemp').value,
             bedTempMin: document.getElementById('bedTempMin').value,
-            bedTempMax: document.getElementById('bedTempMax').value
+            bedTempMax: document.getElementById('bedTempMax').value,
+            spoolmanId: document.getElementById('spoolmanId').value,
+            lotNr: document.getElementById('lotNr').value
         };
 
         if (document.getElementById('formatSelect').value === 'openprinttag') {
@@ -673,6 +680,14 @@ const app = {
         if (type === 'success') {
             setTimeout(() => element.classList.remove('show'), 5000);
         }
+    },
+
+    randomizeLotNr() {
+        const lotNr = Array.from({length: 8}, () =>
+            Math.floor(Math.random() * 16).toString(16).toUpperCase()
+        ).join('');
+        document.getElementById('lotNr').value = lotNr;
+        this.updateRecordSize();
     }
 };
 
