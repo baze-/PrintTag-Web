@@ -2,6 +2,27 @@
 // Simple JSON-based format for 3D printing filament tags
 
 const OpenSpool = {
+    // Base fields always visible in OpenSpool UI
+    BASE_FIELDS: [
+        'compatibility', 'materialType', 'brand',
+        'colorHex'
+    ],
+
+    // Compatibility profiles and associated conditional fields
+    COMPATIBILITY_FIELDS: {
+        none: [],
+        snapmaker_u1_extended: [
+            'minTemp', 'maxTemp', 'bedTempMin', 'bedTempMax', 'spoolmanId', 'lotNr', 'matteFinish'
+        ]
+    },
+
+    // Return list of fields available based on formData (e.g., compatibility)
+    availableFields: function(formData) {
+        const mode = (formData && formData.compatibility) || 'none';
+        const conditional = this.COMPATIBILITY_FIELDS[mode] || [];
+        return new Set([ ...this.BASE_FIELDS, ...conditional ]);
+    },
+
     // Generate OpenSpool JSON data
     generateData: function(formData) {
         const data = {

@@ -2,6 +2,25 @@
 // CBOR-based format for 3D printing filament tags
 
 const OpenPrintTag = {
+    // Available fields for OpenPrintTag (complete list including advanced fields)
+    availableFields: function(formData) {
+        return new Set([
+            // Core/common
+            'compatibility', 'materialType', 'brand',
+            'colorHex', 'colorHex2', 'colorHex3', 'colorHex4',
+            'minTemp', 'maxTemp', 'bedTempMin', 'bedTempMax',
+            'spoolmanId', 'lotNr',
+
+            // Advanced fields
+            'materialName', 'gtin', 'materialAbbreviation', 'density',
+            'filamentDiameter', 'preheatTemp', 'manufacturedDate',
+            'nominalWeight', 'actualWeight', 'emptySpoolWeight', 'countryOfOrigin',
+
+            // Visual/material tags
+            'matteFinish', 'silkFinish', 'translucent', 'transparent',
+            'glitter', 'gradualColorChange', 'coextruded'
+        ]);
+    },
     // Material type enum mapping
     MATERIAL_TYPES: {
         'pla': 0,

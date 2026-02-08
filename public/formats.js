@@ -1,4 +1,13 @@
 const formats = {
+    availableFields(format, formData) {
+        if (format === 'openspool' && typeof OpenSpool.availableFields === 'function') {
+            return OpenSpool.availableFields(formData);
+        }
+        if (format === 'openprinttag' && typeof OpenPrintTag.availableFields === 'function') {
+            return OpenPrintTag.availableFields(formData);
+        }
+        return null;
+    },
     generateData(format, formData) {
         if (format === 'openspool') {
             return OpenSpool.generateData(formData);

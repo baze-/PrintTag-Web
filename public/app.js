@@ -112,6 +112,7 @@ const app = {
         this.initColorPalette();
         this.initEventListeners();
         this.updateFormat();
+        this.updateVisibility();
         // Initialize all four colors
         for (let i = 1; i <= 4; i++) {
             this.updateColor('#FFFFFF', i);
@@ -274,6 +275,7 @@ const app = {
 
         document.getElementById('materialType').addEventListener('change', () => {
             this.applyTemperaturePreset();
+            this.updateVisibility();
         });
 
         document.getElementById('showAdditionalColors').addEventListener('change', (e) => {
@@ -409,6 +411,7 @@ const app = {
         document.getElementById('coextruded').checked = data.coextruded || false;
 
         this.updateFormat();
+        this.updateVisibility();
         this.updateRecordSize();
     },
 
@@ -418,47 +421,57 @@ const app = {
         const brand = brandSelect.value === 'custom' ? brandInput.value : brandSelect.value;
 
         const data = {
+            // Core/common
+            compatibility: (document.getElementById('compatibility') || { value: 'none' }).value,
             materialType: document.getElementById('materialType').value,
+            brand: brand || 'Generic',
             colorHex: document.getElementById('colorHex1').value.replace('#', ''),
             colorHex2: document.getElementById('colorHex2').value.replace('#', ''),
             colorHex3: document.getElementById('colorHex3').value.replace('#', ''),
             colorHex4: document.getElementById('colorHex4').value.replace('#', ''),
-            brand: brand || 'Generic',
+
+            // Temps/IDs
             minTemp: document.getElementById('minTemp').value,
             maxTemp: document.getElementById('maxTemp').value,
             bedTempMin: document.getElementById('bedTempMin').value,
             bedTempMax: document.getElementById('bedTempMax').value,
             spoolmanId: document.getElementById('spoolmanId').value,
-            lotNr: document.getElementById('lotNr').value
+            lotNr: document.getElementById('lotNr').value,
+
+            // Advanced
+            materialName: document.getElementById('materialName').value,
+            gtin: document.getElementById('gtin').value,
+            materialAbbreviation: document.getElementById('materialAbbr').value,
+            density: document.getElementById('density').value,
+            filamentDiameter: document.getElementById('diameter').value,
+            preheatTemp: document.getElementById('preheatTemp').value,
+            manufacturedDate: document.getElementById('mfgDate').value,
+            nominalWeight: document.getElementById('nominalWeight').value,
+            actualWeight: document.getElementById('actualWeight').value,
+            emptySpoolWeight: document.getElementById('spoolWeight').value,
+            countryOfOrigin: document.getElementById('countryCode').value,
+
+            // Visual/material tags
+            matteFinish: document.getElementById('matteFinish').checked,
+            silkFinish: document.getElementById('silkFinish').checked,
+            translucent: document.getElementById('translucent').checked,
+            transparent: document.getElementById('transparent').checked,
+            glitter: document.getElementById('glitter').checked,
+            gradualColorChange: document.getElementById('gradualColorChange').checked,
+            coextruded: document.getElementById('coextruded').checked
         };
 
-        if (document.getElementById('formatSelect').value === 'openprinttag') {
-            const advanced = {
-                materialName: document.getElementById('materialName').value,
-                gtin: document.getElementById('gtin').value,
-                materialAbbreviation: document.getElementById('materialAbbr').value,
-                density: document.getElementById('density').value,
-                filamentDiameter: document.getElementById('diameter').value,
-                preheatTemp: document.getElementById('preheatTemp').value,
-                manufacturedDate: document.getElementById('mfgDate').value,
-                nominalWeight: document.getElementById('nominalWeight').value,
-                actualWeight: document.getElementById('actualWeight').value,
-                emptySpoolWeight: document.getElementById('spoolWeight').value,
-                countryOfOrigin: document.getElementById('countryCode').value,
-                matteFinish: document.getElementById('matteFinish').checked,
-                silkFinish: document.getElementById('silkFinish').checked,
-                translucent: document.getElementById('translucent').checked,
-                transparent: document.getElementById('transparent').checked,
-                glitter: document.getElementById('glitter').checked,
-                gradualColorChange: document.getElementById('gradualColorChange').checked,
-                coextruded: document.getElementById('coextruded').checked
-            };
+        const currentFormat = document.getElementById('formatSelect').value;
 
-            Object.entries(advanced).forEach(([key, value]) => {
-                if (value) data[key] = value;
+        // Filter returned data by availableFields for the selected format
+        const available = formats.availableFields(currentFormat, data);
+        if (available && available.size) {
+            const filtered = {};
+            Object.keys(data).forEach(k => {
+                if (available.has(k)) filtered[k] = data[k];
             });
+            return filtered;
         }
-
         return data;
     },
 
@@ -547,10 +560,35 @@ const app = {
     },
 
     updateFormat() {
-        const format = document.getElementById('formatSelect').value;
-        const advanced = document.getElementById('advancedSection');
-        advanced.classList.toggle('hidden', format === 'openspool');
         this.updateRecordSize();
+        this.updateVisibility();
+    },
+
+    // Toggle visibility of fields based on availableFields for current format
+    updateVisibility() {
+        const format = document.getElementById('formatSelect').value;
+        const formData = this.getFormData();
+        const available = formats.availableFields(format, formData);
+
+        // Process all keys present in the DOM with data-field
+        document.querySelectorAll('[data-field]')
+            .forEach(el => {
+                const key = el.getAttribute('data-field');
+                if (!available || available.has(key)) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+
+        // Show/hide the Advanced section automatically: if any [data-field] inside it is available
+        const advancedSection = document.getElementById('advancedSection');
+        if (advancedSection) {
+            const advancedFields = Array.from(advancedSection.querySelectorAll('[data-field]'))
+                .map(el => el.getAttribute('data-field'));
+            const hasAdvanced = !!(available && advancedFields.some(k => available.has(k)));
+            advancedSection.classList.toggle('hidden', !hasAdvanced);
+        }
     },
 
     updateBrand() {
