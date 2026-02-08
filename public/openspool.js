@@ -20,7 +20,7 @@ const OpenSpool = {
             bedTempMax: 'bed_max_temp',
             spoolmanId: 'spool_id',
             lotNr: 'lot_nr',
-            extendedSubType: 'sub_type'
+            extendedSubType: 'subtype'
         }
     },
 
@@ -69,7 +69,7 @@ const OpenSpool = {
             data.lot_nr = formData.lotNr.toUpperCase();
         }
         if (formData.extendedSubType) {
-            data.sub_type = formData.extendedSubType;
+            data.subtype = formData.extendedSubType;
         }
 
         return data;
@@ -105,7 +105,7 @@ const OpenSpool = {
             bedTempMax: jsonData.bed_max_temp || '',
             spoolmanId: jsonData.spool_id || 0,
             lotNr: jsonData.lot_nr || '',
-            extendedSubType: jsonData.sub_type || ''
+            extendedSubType: jsonData.subtype || ''
         };
     },
 
