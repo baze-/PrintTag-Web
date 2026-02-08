@@ -2,25 +2,6 @@
 // CBOR-based format for 3D printing filament tags
 
 const OpenPrintTag = {
-    // Available fields for OpenPrintTag (complete list including advanced fields)
-    availableFields: function(formData) {
-        return new Set([
-            // Core/common
-            'compatibility', 'materialType', 'brand',
-            'colorHex', 'colorHex2', 'colorHex3', 'colorHex4',
-            'minTemp', 'maxTemp', 'bedTempMin', 'bedTempMax',
-            'spoolmanId', 'lotNr',
-
-            // Advanced fields
-            'materialName', 'gtin', 'materialAbbreviation', 'density',
-            'filamentDiameter', 'preheatTemp', 'manufacturedDate',
-            'nominalWeight', 'actualWeight', 'emptySpoolWeight', 'countryOfOrigin',
-
-            // Visual/material tags
-            'matteFinish', 'silkFinish', 'translucent', 'transparent',
-            'glitter', 'gradualColorChange', 'coextruded'
-        ]);
-    },
     // Material type enum mapping
     MATERIAL_TYPES: {
         'pla': 0,
@@ -62,6 +43,30 @@ const OpenPrintTag = {
 
     MATERIAL_CLASSES: {
         'fff_filament': 0
+    },
+    // Available fields for OpenPrintTag (complete list including advanced fields)
+    availableFields: function(formData) {
+        return new Set([
+            // Core/common
+            'materialType', 'brand',
+            'colorHex', 'colorHex2', 'colorHex3', 'colorHex4',
+            'minTemp', 'maxTemp', 'bedTempMin', 'bedTempMax',
+            'spoolmanId', 'lotNr',
+
+            // Advanced fields
+            'materialName', 'gtin', 'materialAbbreviation', 'density',
+            'filamentDiameter', 'preheatTemp', 'manufacturedDate',
+            'nominalWeight', 'actualWeight', 'emptySpoolWeight', 'countryOfOrigin',
+
+            // Visual/material tags
+            'matteFinish', 'silkFinish', 'translucent', 'transparent',
+            'glitter', 'gradualColorChange', 'coextruded'
+        ]);
+    },
+
+    // Get file extension for downloads
+    getFileExtension(format) {
+        return '.bin';
     },
 
     // Parse color string to RGBA bytes
@@ -447,7 +452,7 @@ const OpenPrintTag = {
     },
 
     // Download as binary NDEF file
-    downloadBinary: function(cborData, filename = 'openprinttag.bin') {
+    download: function(cborData, filename = 'openprinttag.bin') {
         const ndefBytes = NDEF.serialize(cborData, 'application/vnd.openprinttag');
         const blob = new Blob([ndefBytes], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);

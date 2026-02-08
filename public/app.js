@@ -110,6 +110,7 @@ const app = {
     init() {
         this.checkNFC();
         this.initColorPalette();
+        this.populateFormats();
         this.initEventListeners();
         this.updateFormat();
         this.updateVisibility();
@@ -119,6 +120,22 @@ const app = {
         }
         this.applyTemperaturePreset();
         this.updateRecordSize();
+    },
+
+    populateFormats(withHidden = false, selectedId = 0) {
+        const select = document.getElementById('formatSelect');
+        if (!select) return;
+        // Clear existing options
+        while (select.firstChild) select.removeChild(select.firstChild);
+
+        const list = formats.availableFormats(withHidden);
+        list.forEach((f, idx) => {
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.textContent = f.label;
+            if (selectedId ? f.id === selectedId : idx === 0) opt.selected = true;
+            select.appendChild(opt);
+        });
     },
 
     async checkNFC() {
@@ -155,7 +172,6 @@ const app = {
         document.getElementById('formSection').classList.add('hidden');
 
         const formatSelect = document.getElementById('formatSelect');
-        const createModeHiddenOptions = formatSelect.querySelectorAll('.create-mode-hidden');
 
         if (mode === 'menu') {
             document.getElementById('modeSelection').classList.remove('hidden');
@@ -166,15 +182,14 @@ const app = {
         } else if (mode === 'update') {
             document.getElementById('formSection').classList.remove('hidden');
             document.getElementById('formTitle').textContent = 'Update Tag Data';
-            // Show all options in update mode
-            createModeHiddenOptions.forEach(option => option.style.display = '');
+            // Keep current selection while repopulating formats
+            const current = formatSelect.value;
+            this.populateFormats(true, current);
         } else if (mode === 'create') {
             document.getElementById('formSection').classList.remove('hidden');
             document.getElementById('formTitle').textContent = 'Create New Tag';
-            // Hide options marked as create-mode-hidden
-            createModeHiddenOptions.forEach(option => option.style.display = 'none');
-            // Set format to openspool
-            formatSelect.value = 'openspool';
+            // Repopulate formats and select first by default
+            this.populateFormats(false);
             this.updateFormat();
             // Generate new lot number for new tags
             this.randomizeLotNr();
@@ -345,7 +360,7 @@ const app = {
     },
 
     populateForm(data, format) {
-        document.getElementById('formatSelect').value = format;
+        document.getElementById('formatSelect').value = data.format || format;
         document.getElementById('materialType').value = data.materialType || 'PLA';
 
         // Populate all four color fields
@@ -421,8 +436,9 @@ const app = {
         const brand = brandSelect.value === 'custom' ? brandInput.value : brandSelect.value;
 
         const data = {
+            format: document.getElementById('formatSelect').value,
+
             // Core/common
-            compatibility: (document.getElementById('compatibility') || { value: 'none' }).value,
             materialType: document.getElementById('materialType').value,
             brand: brand || 'Generic',
             colorHex: document.getElementById('colorHex1').value.replace('#', ''),

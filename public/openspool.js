@@ -2,26 +2,40 @@
 // Simple JSON-based format for 3D printing filament tags
 
 const OpenSpool = {
-    // Base fields always visible in OpenSpool UI
-    BASE_FIELDS: [
-        'compatibility', 'materialType', 'brand',
-        'colorHex'
-    ],
+    // Base fields always visible in OpenSpool UI (normalized -> raw key; null means UI-only)
+    BASE_FIELDS: {
+        format: null, // Not stored, used for compatibility detection
+        materialType: 'type',
+        brand: 'brand',
+        colorHex: 'color_hex'
+    },
 
-    // Compatibility profiles and associated conditional fields
+    // Compatibility profiles and associated conditional fields (normalized -> raw key)
     COMPATIBILITY_FIELDS: {
-        none: [],
-        snapmaker_u1_extended: [
-            'minTemp', 'maxTemp', 'bedTempMin', 'bedTempMax', 'spoolmanId', 'lotNr', 'matteFinish'
-        ]
+        openspool_compat: {},
+        openspool_extended: {
+            minTemp: 'min_temp',
+            maxTemp: 'max_temp',
+            bedTempMin: 'bed_min_temp',
+            bedTempMax: 'bed_max_temp',
+            spoolmanId: 'spool_id',
+            lotNr: 'lot_nr'
+        }
     },
 
-    // Return list of fields available based on formData (e.g., compatibility)
+    // Return list of fields available based on formData (e.g., format)
     availableFields: function(formData) {
-        const mode = (formData && formData.compatibility) || 'none';
-        const conditional = this.COMPATIBILITY_FIELDS[mode] || [];
-        return new Set([ ...this.BASE_FIELDS, ...conditional ]);
+        const conditionalObj = this.COMPATIBILITY_FIELDS[formData.format] || {};
+        const baseKeys = Object.keys(this.BASE_FIELDS);
+        const conditionalKeys = Object.keys(conditionalObj);
+        return new Set([ ...baseKeys, ...conditionalKeys ]);
     },
+
+    // Get file extension for downloads
+    getFileExtension(format) {
+        return '.json';
+    },
+
 
     // Generate OpenSpool JSON data
     generateData: function(formData) {
@@ -63,7 +77,21 @@ const OpenSpool = {
             throw new Error("Not an OpenSpool format");
         }
 
+        // Infer format by checking COMPATIBILITY_FIELDS against raw keys
+        let format = 'openspool_compat';
+        for (const [mode, fieldsObj] of Object.entries(this.COMPATIBILITY_FIELDS)) {
+            if (mode === 'openspool_compat') continue;
+            const anyPresent = Object.values(fieldsObj).some(raw =>
+                raw && Object.prototype.hasOwnProperty.call(jsonData, raw)
+            );
+            if (anyPresent) {
+                format = mode;
+                break;
+            }
+        }
+
         return {
+            format,
             materialType: jsonData.type || 'PLA',
             colorHex: jsonData.color_hex || 'FFFFFF',
             brand: jsonData.brand || 'Generic',
@@ -109,7 +137,7 @@ const OpenSpool = {
     },
 
     // Download as JSON file
-    downloadJSON: function(data, filename = 'openspool.json') {
+    download: function(data, filename = 'openspool.json') {
         const jsonStr = JSON.stringify(data, null, 2);
         const blob = new Blob([jsonStr], { type: 'application/json' });
         const url = URL.createObjectURL(blob);

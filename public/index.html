@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
     <title>Filament Tag Generator</title>
     <style>
         :root {
@@ -392,23 +392,13 @@
 
             <div class="form-group">
                 <label>Tag Format</label>
-                <select id="formatSelect" onchange="app.updateFormat()">
-                    <option value="openspool" selected>OpenSpool (JSON)</option>
-                    <option value="openprinttag" class="create-mode-hidden">OpenPrintTag (CBOR)</option>
-                </select>
+                <select id="formatSelect" onchange="app.updateFormat()"></select>
                 <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
                     <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a>: Simple JSON |
                     <a href="https://specs.openprinttag.org/" target="_blank">OpenPrintTag</a>: Advanced CBOR
                 </small>
             </div>
 
-            <div class="form-group" data-field="compatibility">
-                <label>Printer Compatibility</label>
-                <select id="compatibility" onchange="app.updateVisibility(); app.updateRecordSize()">
-                    <option value="none" selected>None</option>
-                    <option value="snapmaker_u1_extended">Snapmaker U1 Extended Firmware</option>
-                </select>
-            </div>
 
             <div class="form-group">
                 <label>Material Type</label>

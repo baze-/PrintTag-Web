@@ -1,36 +1,44 @@
 const formats = {
-    availableFields(format, formData) {
-        if (format === 'openspool' && typeof OpenSpool.availableFields === 'function') {
-            return OpenSpool.availableFields(formData);
-        }
-        if (format === 'openprinttag' && typeof OpenPrintTag.availableFields === 'function') {
-            return OpenPrintTag.availableFields(formData);
-        }
-        return null;
+    FORMATS: {
+        'openspool_extended': { module: OpenSpool, label: 'OpenSpool - Snapmaker U1 Extended (JSON)', hidden: false },
+        'openspool_compat': { module: OpenSpool, label: 'OpenSpool - Compat (JSON)', hidden: false },
+        'openprinttag': { module: OpenPrintTag, label: 'OpenPrintTag (CBOR)', hidden: true }
     },
+
+    availableFormats(withHidden = false) {
+        return Object.entries(this.FORMATS)
+            .filter(([id, cfg]) => withHidden || !cfg.hidden)
+            .map(([id, cfg]) => ({ id, label: cfg.label, hidden: !!cfg.hidden }));
+    },
+
+    getDisplayName(format) {
+        const cfg = this.FORMATS[format];
+        return cfg ? cfg.label : format;
+    },
+
+    availableFields(format, formData) {
+        if (!this.FORMATS[format])
+            return null;
+        return this.FORMATS[format].module.availableFields(formData);
+    },
+
     generateData(format, formData) {
-        if (format === 'openspool') {
-            return OpenSpool.generateData(formData);
-        } else if (format === 'openprinttag') {
-            return OpenPrintTag.generateData(formData);
-        }
-        throw new Error(`Unknown format: ${format}`);
+        if (!this.FORMATS[format])
+            throw new Error(`Unknown format: ${format}`);
+        return this.FORMATS[format].module.generateData(formData);
     },
 
     createNDEFRecord(format, data) {
-        if (format === 'openspool') {
-            return OpenSpool.createNDEFRecord(data);
-        } else if (format === 'openprinttag') {
-            return OpenPrintTag.createNDEFRecord(data);
-        }
-        throw new Error(`Unknown format: ${format}`);
+        if (!this.FORMATS[format])
+            throw new Error(`Unknown format: ${format}`);
+        return this.FORMATS[format].module.createNDEFRecord(data);
     },
 
     parseNDEFRecord(record) {
         // Try OpenSpool first
         const openspoolData = OpenSpool.parseNDEFRecord(record);
         if (openspoolData) {
-            return { format: 'openspool', data: openspoolData };
+            return { format: openspoolData.format || 'openspool', data: openspoolData };
         }
 
         // Try OpenPrintTag
@@ -43,55 +51,36 @@ const formats = {
     },
 
     parseData(format, buffer) {
-        if (format === 'openspool') {
-            return OpenSpool.readBinary(buffer);
-        } else if (format === 'openprinttag') {
-            return OpenPrintTag.readBinary(buffer);
-        }
-        throw new Error(`Unknown format: ${format}`);
+        if (!this.FORMATS[format])
+            throw new Error(`Unknown format: ${format}`);
+        return this.FORMATS[format].module.parseData(buffer);
     },
 
     download(format, data) {
-        if (format === 'openspool') {
-            OpenSpool.downloadJSON(data);
-        } else if (format === 'openprinttag') {
-            OpenPrintTag.downloadBinary(data);
-        } else {
+        if (!this.FORMATS[format])
             throw new Error(`Unknown format: ${format}`);
-        }
+        return this.FORMATS[format].module.download(data);
     },
 
     getFileExtension(format) {
-        if (format === 'openspool') {
-            return '.json';
-        } else if (format === 'openprinttag') {
-            return '.bin';
-        }
-        throw new Error(`Unknown format: ${format}`);
-    },
-
-    getDisplayName(format) {
-        if (format === 'openspool') {
-            return 'OpenSpool (JSON)';
-        } else if (format === 'openprinttag') {
-            return 'OpenPrintTag (CBOR)';
-        }
-        throw new Error(`Unknown format: ${format}`);
+        if (!this.FORMATS[format])
+            throw new Error(`Unknown format: ${format}`);
+        return this.FORMATS[format].module.getFileExtension(format);
     },
 
     detectFormatFromFilename(filename) {
-        if (filename.endsWith('.json')) {
-            return 'openspool';
-        } else if (filename.endsWith('.bin')) {
-            return 'openprinttag';
+        for (const key in this.FORMATS) {
+            if (filename.endsWith(this.FORMATS[key].getFileExtension(key))) {
+                return key;
+            }
         }
         return null;
     },
 
     calculateRecordSize(format, formData) {
         try {
-            const data = this.generateData(format, formData);
-            const records = this.createNDEFRecord(format, data);
+            const data = this.generateData(this.route(format), formData);
+            const records = this.createNDEFRecord(this.route(format), data);
 
             let totalSize = 0;
             for (const record of records) {
